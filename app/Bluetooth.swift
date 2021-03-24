@@ -85,7 +85,6 @@ extension Bluetooth: CBCentralManagerDelegate {
         if filtered.count == 0{
             guard let _ = peripheral.name else { return }
             let new = Device(id: peripherals.count, rssi: RSSI.intValue, uuid: uuid, peripheral: peripheral)
-            print(advertisementData)
             peripherals.append(new)
             delegate?.list(list: peripherals)
         }
