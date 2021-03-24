@@ -7,85 +7,100 @@
 
 import CoreBluetooth
 
-class BLEConnection:NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate{
-    struct bledevices: Identifiable {
+protocol BluetoothProtocol {
+    func state(state: Bluetooth.State)
+    func list(list: [Bluetooth.Device])
+    func value(data: Data)
+}
+
+final class Bluetooth: NSObject {
+    static let shared = Bluetooth()
+    var delegate: BluetoothProtocol?
+    
+    var peripherals = [Device]()
+    var current: CBPeripheral?
+    
+    private var manager: CBCentralManager?
+    private var readCharacteristic: CBCharacteristic?
+    private var writeCharacteristic: CBCharacteristic?
+    private var notifyCharacteristic: CBCharacteristic?
+    
+    private override init() {
+        super.init()
+        manager = CBCentralManager(delegate: self, queue: .none)
+        manager?.delegate = self
+    }
+    
+    func connect(_ peripheral: CBPeripheral) {
+        if current != nil {
+            guard let current = current else { return }
+            manager?.cancelPeripheralConnection(current)
+        } else { manager?.connect(peripheral, options: nil) }
+    }
+    
+    func disconnect() {
+        guard let current = current else { return }
+        manager?.cancelPeripheralConnection(current)
+    }
+    
+    func startScanning() {
+        peripherals.removeAll()
+        manager?.scanForPeripherals(withServices: nil, options: nil)
+    }
+    func stopScanning() {
+        peripherals.removeAll()
+        manager?.stopScan()
+    }
+    func send(_ value: [UInt8]) {
+        guard let characteristic = writeCharacteristic else { return }
+        current?.writeValue(Data(value), for: characteristic, type: .withResponse)
+    }
+    
+    enum State { case unknown, resetting, unsupported, unauthorized, poweredOff, poweredOn, error }
+    
+    struct Device: Identifiable {
         let id: Int
-        let name: String
         let rssi: Int
         let uuid: String
         let peripheral: CBPeripheral
     }
-    
-    var manager: CBCentralManager!
-    var peripheral: CBPeripheral!
-    var readCharacteristic: CBCharacteristic?
-    var writeCharacteristic: CBCharacteristic?
-    var notifyCharacteristic: CBCharacteristic?
-    @Published var number = 0
-    @Published var name = ""
-    @Published var connected = false
-    @Published var peripherals = [bledevices]()
-    @Published var text = ""
-    @Published var data:[UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]{
-        didSet{
-            send(data)
-        }
-    }
-    @Published var received:[UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    
-    override init() {
-        super.init()
-        manager = CBCentralManager(delegate: self, queue: .none)
-        manager.delegate = self
-    }
+}
+
+extension Bluetooth: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        switch manager.state {
-        case .unknown:
-            print("◦ .unknown")
-        case .resetting:
-            print("◦ .resetting")
-        case .unsupported:
-            print("◦ .unsupported")
-        case .unauthorized:
-            print("◦ u disabled, pls enable it in settings")
-        case .poweredOff:
-            print("◦ turn on bluetooth")
-        case .poweredOn:
-            print("◦ everytjing is ok")
-        @unknown default:
-            print("◦ fatal")
+        switch manager?.state {
+        case .unknown: delegate?.state(state: .unknown)
+        case .resetting: delegate?.state(state: .resetting)
+        case .unsupported: delegate?.state(state: .unsupported)
+        case .unauthorized: delegate?.state(state: .unauthorized)
+        case .poweredOff: delegate?.state(state: .poweredOff)
+        case .poweredOn: delegate?.state(state: .poweredOn)
+        default: delegate?.state(state: .error)
         }
     }
+    
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        let name = String(peripheral.name ?? "unknown")
         let uuid = String(describing: peripheral.identifier)
         let filtered = peripherals.filter{$0.uuid == uuid}
         if filtered.count == 0{
-            if name != "unknown"{
-                let new = bledevices(id: peripherals.count, name: name, rssi: RSSI.intValue, uuid: uuid, peripheral: peripheral)
-                print("• \(new.uuid) \(new.name)")
-                peripherals.append(new)
-            }
+            guard let _ = peripheral.name else { return }
+            let new = Device(id: peripherals.count, rssi: RSSI.intValue, uuid: uuid, peripheral: peripheral)
+            print(advertisementData)
+            peripherals.append(new)
+            delegate?.list(list: peripherals)
         }
     }
     
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) { print(error!) }
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) { self.current = nil }
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        print("◦ connected to \(peripheral.name ?? "unknown")")
-        connected = true
-        name = peripheral.name ?? "unknown"
+        self.current = peripheral
         peripheral.delegate = self
         peripheral.discoverServices(nil)
     }
-    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        print(error!)
-    }
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        print("◦ \(peripheral.name ?? "unknown") disconnected")
-        connected = false
-        name = ""
-        text = ""
-    }
-    
+}
+
+extension Bluetooth: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
         for service in services {
@@ -94,75 +109,35 @@ class BLEConnection:NSObject, ObservableObject, CBCentralManagerDelegate, CBPeri
     }
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         var str = "Characteristic"
-        guard let characteristics = service.characteristics else{return}
-        for characteristic in characteristics{
+        guard let characteristics = service.characteristics else { return }
+        for characteristic in characteristics {
             switch characteristic.properties {
             case .read:
-                print("◦ read")
                 readCharacteristic = characteristic
                 str += "[r]"
             case .write:
-                print("◦ write")
                 writeCharacteristic = characteristic
                 str += "[w]"
             case .notify:
-                print("◦ notify")
                 notifyCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
                 str += "[n]"
-            default:
-                print("◦ unknown")
+            default: break
             }
         }
     }
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor descriptor: CBDescriptor, error: Error?){}
-    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?){}
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?){
-        if let value = characteristic.value{
-            self.text = value.byte()
-        }
-    }
-    
-    func connect(){
-        if connected {
-            manager.cancelPeripheralConnection(peripheral)
-        }else{
-            peripheral = peripherals[number].peripheral
-            manager.connect(peripheral, options: nil)
-        }
-    }
-    func disconnect(){
-        manager.cancelPeripheralConnection(peripheral)
-    }
-    func startScanning(){
-        print("◦ scan")
-        peripherals.removeAll()
-        manager.scanForPeripherals(withServices: nil, options: nil)
-    }
-    func stopScanning(){
-        print("◦ stop")
-        manager.stopScan()
-        peripherals.removeAll()
-    }
-    func write(_ text:String){
-        self.text = text
-    }
-    func send(_ value:[UInt8]){
-        guard let characteristic = writeCharacteristic else{return}
-        let data = Data(value)
-        peripheral.writeValue(data, for: characteristic, type: .withResponse)
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor descriptor: CBDescriptor, error: Error?) { }
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) { }
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        guard let value = characteristic.value else { return }
+        delegate?.value(data: value)
     }
 }
 
 extension Data {
     func hex() -> String{
-        return map{
-            String(format: "%02hhx", $0)
-        }.joined()
+        map{ String(format: "%02hhx", $0) }.joined()
     }
-    func byte() -> String{
-        return map{
-            String(UInt32($0))
-        }.joined()
-    }
+    
+    var byte: String { map{ String(UInt32($0)) }.joined() }
 }

@@ -10,7 +10,6 @@
 		E4067564254759950063556F /* appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4067563254759950063556F /* appApp.swift */; };
 		E4067566254759950063556F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4067565254759950063556F /* ContentView.swift */; };
 		E4067568254759960063556F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4067567254759960063556F /* Assets.xcassets */; };
-		E406756B254759960063556F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E406756A254759960063556F /* Preview Assets.xcassets */; };
 		E4067574254759B80063556F /* Bluetooth.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4067573254759B80063556F /* Bluetooth.swift */; };
 /* End PBXBuildFile section */
 
@@ -19,7 +18,6 @@
 		E4067563254759950063556F /* appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = appApp.swift; sourceTree = "<group>"; };
 		E4067565254759950063556F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		E4067567254759960063556F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		E406756A254759960063556F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		E406756C254759960063556F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E4067573254759B80063556F /* Bluetooth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bluetooth.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -59,17 +57,8 @@
 				E4067573254759B80063556F /* Bluetooth.swift */,
 				E4067567254759960063556F /* Assets.xcassets */,
 				E406756C254759960063556F /* Info.plist */,
-				E4067569254759960063556F /* Preview Content */,
 			);
 			path = app;
-			sourceTree = "<group>";
-		};
-		E4067569254759960063556F /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				E406756A254759960063556F /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -129,7 +118,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E406756B254759960063556F /* Preview Assets.xcassets in Resources */,
 				E4067568254759960063556F /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -272,7 +260,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = "\"app/Preview Content\"";
 				DEVELOPMENT_TEAM = XS53X2MJSQ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = app/Info.plist;
@@ -294,7 +281,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = "\"app/Preview Content\"";
 				DEVELOPMENT_TEAM = XS53X2MJSQ;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = app/Info.plist;
