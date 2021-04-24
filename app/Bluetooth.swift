@@ -19,6 +19,10 @@ final class Bluetooth: NSObject {
     
     var peripherals = [Device]()
     var current: CBPeripheral?
+    var state: State {
+        get { .unknown }
+        set { delegate?.state(state: newValue) }
+    }
     
     private var manager: CBCentralManager?
     private var readCharacteristic: CBCharacteristic?
@@ -51,12 +55,13 @@ final class Bluetooth: NSObject {
         peripherals.removeAll()
         manager?.stopScan()
     }
+    
     func send(_ value: [UInt8]) {
         guard let characteristic = writeCharacteristic else { return }
         current?.writeValue(Data(value), for: characteristic, type: .withResponse)
     }
     
-    enum State { case unknown, resetting, unsupported, unauthorized, poweredOff, poweredOn, error }
+    enum State { case unknown, resetting, unsupported, unauthorized, poweredOff, poweredOn, error, connected, disconnected }
     
     struct Device: Identifiable {
         let id: Int
@@ -69,13 +74,13 @@ final class Bluetooth: NSObject {
 extension Bluetooth: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch manager?.state {
-        case .unknown: delegate?.state(state: .unknown)
-        case .resetting: delegate?.state(state: .resetting)
-        case .unsupported: delegate?.state(state: .unsupported)
-        case .unauthorized: delegate?.state(state: .unauthorized)
-        case .poweredOff: delegate?.state(state: .poweredOff)
-        case .poweredOn: delegate?.state(state: .poweredOn)
-        default: delegate?.state(state: .error)
+        case .unknown: state = .unknown
+        case .resetting: state = .resetting
+        case .unsupported: state = .unsupported
+        case .unauthorized: state = .unauthorized
+        case .poweredOff: state = .poweredOff
+        case .poweredOn: state = .poweredOn
+        default: state = .error
         }
     }
     
@@ -91,9 +96,13 @@ extension Bluetooth: CBCentralManagerDelegate {
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) { print(error!) }
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) { self.current = nil }
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        current = nil
+        state = .disconnected
+    }
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        self.current = peripheral
+        current = peripheral
+        state = .connected
         peripheral.delegate = self
         peripheral.discoverServices(nil)
     }
@@ -107,20 +116,18 @@ extension Bluetooth: CBPeripheralDelegate {
         }
     }
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        var str = "Characteristic"
         guard let characteristics = service.characteristics else { return }
         for characteristic in characteristics {
             switch characteristic.properties {
             case .read:
                 readCharacteristic = characteristic
-                str += "[r]"
             case .write:
                 writeCharacteristic = characteristic
-                str += "[w]"
             case .notify:
                 notifyCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
-                str += "[n]"
+            case .indicate: break //print("indicate")
+            case .broadcast: break //print("broadcast")
             default: break
             }
         }
@@ -134,9 +141,9 @@ extension Bluetooth: CBPeripheralDelegate {
 }
 
 extension Data {
-    func hex() -> String{
-        map{ String(format: "%02hhx", $0) }.joined()
-    }
+    var hex: String { map{ String(format: "%02hhx", $0) }.joined() }
+    
+    var hexDescription: String { reduce("") {$0 + String(format: "%02x", $1)} }
     
     var byte: String { map{ String(UInt32($0)) }.joined() }
 }

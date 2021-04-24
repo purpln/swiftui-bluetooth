@@ -8,36 +8,118 @@
 import SwiftUI
 
 struct ContentView: View {
+    var bluetooth = Bluetooth.shared
     @State var presented: Bool = false
+    @State var list = [Bluetooth.Device]()
+    @State var isConnected: Bool = Bluetooth.shared.current != nil { didSet { if isConnected { presented.toggle() } } }
+    
+    @State var response: String = ""
+    @State var stringValue: String = ""
+    @State var value: Float = 0
     
     var body: some View {
-        Button("connect"){ presented.toggle() }.sheet(isPresented: $presented){ Action(presented: $presented) }
+        VStack{
+            HStack{
+                Button("scan"){ presented.toggle() }.buttonStyle(appButton()).padding()
+                Spacer()
+            }
+            if isConnected {
+                Slider(value: Binding( get: { value }, set: {(newValue) in sendValue(newValue) } ), in: 0...100).padding(.horizontal)
+                Text("returned value from \(bluetooth.current?.name ?? ""): \(response)")
+            }
+            Spacer()
+        }.sheet(isPresented: $presented){ Action(bluetooth: bluetooth, presented: $presented, list: $list, isConnected: $isConnected) }
+            .onAppear{ bluetooth.delegate = self }
+    }
+    
+    func sendValue(_ value: Float) {
+        if Int(value) != Int(self.value) {
+            guard let sendValue = map(Int(value), of: 0...100, to: 0...255) else { return }
+            bluetooth.send([ toBytes(sendValue)])
+        }
+        self.value = value
+    }
+    
+    func map(_ value: Int, of: ClosedRange<Int>, to: ClosedRange<Int>) -> Int? {
+        guard let ofmin = of.min(), let ofmax = of.max(), let tomin = to.min(), let tomax = to.max() else { return nil }
+        return Int(tomin + (tomax - tomin) * (value - ofmin) / (ofmax - ofmin))
+    }
+    
+    func toBytes(_ value: Int) -> UInt8 { UInt8( value ) }
+}
+
+extension ContentView: BluetoothProtocol {
+    func state(state: Bluetooth.State) {
+        switch state {
+        case .unknown: print("◦ .unknown")
+        case .resetting: print("◦ .resetting")
+        case .unsupported: print("◦ .unsupported")
+        case .unauthorized: print("◦ bluetooth disabled, enable it in settings")
+        case .poweredOff: print("◦ turn on bluetooth")
+        case .poweredOn: print("◦ everything is ok")
+        case .error: print("• error")
+        case .connected:
+            print("◦ connected to \(bluetooth.current?.name ?? "")")
+            isConnected = true
+        case .disconnected:
+            print("◦ disconnected")
+            isConnected = false
+        }
+    }
+    
+    func list(list: [Bluetooth.Device]) { self.list = list }
+    
+    func value(data: Data) {
+        response = data.hexDescription
     }
 }
 
 struct Action: View {
-    var bluetooth = Bluetooth.shared
+    var bluetooth: Bluetooth
     @Binding var presented: Bool
-    @State var list = [Bluetooth.Device]()
+    @Binding var list: [Bluetooth.Device]
+    @Binding var isConnected: Bool { didSet { if isConnected { presented.toggle() } } }
     
     var body: some View {
-        HStack{
-            Button("disconnect"){ bluetooth.disconnect() }.padding()
+        HStack {
             Spacer()
+            if isConnected {
+                Text("connected to \(bluetooth.current?.name ?? "")")
+            }
+            Spacer()
+            Button(action: { presented.toggle() }){
+                Color(UIColor.secondarySystemBackground).overlay(
+                    Image(systemName: "multiply").foregroundColor(Color(UIColor.systemGray))
+                ).frame(width: 30, height: 30).cornerRadius(15)
+            }.padding([.horizontal, .top]).padding(.bottom, 8)
+        }
+        if isConnected {
+            HStack {
+                Button("disconnect"){ bluetooth.disconnect() }.buttonStyle(appButton()).padding([.horizontal])
+                Spacer()
+            }
         }
         List(list){ peripheral in
             Button(peripheral.peripheral.name ?? ""){ bluetooth.connect(peripheral.peripheral) }
         }.listStyle(InsetGroupedListStyle()).onAppear{
-            bluetooth.delegate = self
             bluetooth.startScanning()
-        }.onDisappear{ bluetooth.stopScanning() }
+        }.onDisappear{ bluetooth.stopScanning() }.padding(.vertical, 0)
     }
 }
 
-extension Action: BluetoothProtocol {
-    func state(state: Bluetooth.State) { }
+struct appButton: ButtonStyle {
+    let color: Color
     
-    func list(list: [Bluetooth.Device]) { self.list = list }
+    public init(color: Color = .accentColor) {
+        self.color = color
+    }
     
-    func value(data: Data) { }
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .foregroundColor(.accentColor)
+            .background(Color.accentColor.opacity(0.2))
+            .cornerRadius(8)
+    }
 }
