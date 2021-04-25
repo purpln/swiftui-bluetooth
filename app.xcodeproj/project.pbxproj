@@ -11,6 +11,8 @@
 		E4067566254759950063556F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4067565254759950063556F /* ContentView.swift */; };
 		E4067568254759960063556F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4067567254759960063556F /* Assets.xcassets */; };
 		E4067574254759B80063556F /* Bluetooth.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4067573254759B80063556F /* Bluetooth.swift */; };
+		E490BA6C2634EDD6000276EA /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E490BA6B2634EDD6000276EA /* ScanView.swift */; };
+		E490BA6F2634EE39000276EA /* extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E490BA6E2634EE39000276EA /* extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,6 +22,8 @@
 		E4067567254759960063556F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E406756C254759960063556F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E4067573254759B80063556F /* Bluetooth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bluetooth.swift; sourceTree = "<group>"; };
+		E490BA6B2634EDD6000276EA /* ScanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanView.swift; sourceTree = "<group>"; };
+		E490BA6E2634EE39000276EA /* extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = extensions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,7 +58,9 @@
 			children = (
 				E4067563254759950063556F /* appApp.swift */,
 				E4067565254759950063556F /* ContentView.swift */,
+				E490BA6B2634EDD6000276EA /* ScanView.swift */,
 				E4067573254759B80063556F /* Bluetooth.swift */,
+				E490BA6E2634EE39000276EA /* extensions.swift */,
 				E4067567254759960063556F /* Assets.xcassets */,
 				E406756C254759960063556F /* Info.plist */,
 			);
@@ -129,7 +135,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E490BA6F2634EE39000276EA /* extensions.swift in Sources */,
 				E4067566254759950063556F /* ContentView.swift in Sources */,
+				E490BA6C2634EDD6000276EA /* ScanView.swift in Sources */,
 				E4067574254759B80063556F /* Bluetooth.swift in Sources */,
 				E4067564254759950063556F /* appApp.swift in Sources */,
 			);

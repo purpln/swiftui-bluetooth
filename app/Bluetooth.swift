@@ -19,10 +19,7 @@ final class Bluetooth: NSObject {
     
     var peripherals = [Device]()
     var current: CBPeripheral?
-    var state: State {
-        get { .unknown }
-        set { delegate?.state(state: newValue) }
-    }
+    var state: State = .unknown { didSet { delegate?.state(state: state) } }
     
     private var manager: CBCentralManager?
     private var readCharacteristic: CBCharacteristic?
@@ -39,6 +36,7 @@ final class Bluetooth: NSObject {
         if current != nil {
             guard let current = current else { return }
             manager?.cancelPeripheralConnection(current)
+            manager?.connect(peripheral, options: nil)
         } else { manager?.connect(peripheral, options: nil) }
     }
     
@@ -138,8 +136,4 @@ extension Bluetooth: CBPeripheralDelegate {
         guard let value = characteristic.value else { return }
         delegate?.value(data: value)
     }
-}
-
-extension Data {
-    var hex: String { map{ String(format: "%02x", $0) }.joined() }
 }

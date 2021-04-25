@@ -32,3 +32,15 @@ struct appButton: ButtonStyle {
             .cornerRadius(8)
     }
 }
+
+struct appTextField: TextFieldStyle {
+    @Binding var focused: Bool
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(focused ? Color.accentColor : Color.accentColor.opacity(0.2), lineWidth: 2)
+            ).padding()
+    }
+}
