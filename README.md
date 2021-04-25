@@ -1,4 +1,4 @@
-# SwiftUI and CoreBluetooth with search list, connection/disconnection and no repeat in search
+# SwiftUI and CoreBluetooth with search list, connection/disconnection and no repeats in scan list send/read bytes/strings
 ## Connection to esp32 and communication with byte operations
 
 - scan list
