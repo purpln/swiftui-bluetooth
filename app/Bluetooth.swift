@@ -141,9 +141,5 @@ extension Bluetooth: CBPeripheralDelegate {
 }
 
 extension Data {
-    var hex: String { map{ String(format: "%02hhx", $0) }.joined() }
-    
-    var hexDescription: String { reduce("") {$0 + String(format: "%02x", $1)} }
-    
-    var byte: String { map{ String(UInt32($0)) }.joined() }
+    var hex: String { map{ String(format: "%02x", $0) }.joined() }
 }

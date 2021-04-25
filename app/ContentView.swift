@@ -13,9 +13,10 @@ struct ContentView: View {
     @State var list = [Bluetooth.Device]()
     @State var isConnected: Bool = Bluetooth.shared.current != nil { didSet { if isConnected { presented.toggle() } } }
     
-    @State var response: String = ""
-    @State var stringValue: String = ""
+    @State var response = Data()
+    @State var string: String = ""
     @State var value: Float = 0
+    @State var state: Int = 0 { didSet { bluetooth.send([toBytes(state)]) } }
     
     var body: some View {
         VStack{
@@ -25,17 +26,22 @@ struct ContentView: View {
             }
             if isConnected {
                 Slider(value: Binding( get: { value }, set: {(newValue) in sendValue(newValue) } ), in: 0...100).padding(.horizontal)
-                Text("returned value from \(bluetooth.current?.name ?? ""): \(response)")
+                Button("toggle"){ sendState() }.buttonStyle(appButton())
+                TextField("", text: $string).onChange(of: string){ bluetooth.send(Array($0.utf8)) }
+                Text("returned byte value from \(bluetooth.current?.name ?? ""): \(response.hex)")
+                Text("returned string: \(String(data: response, encoding: .utf8) ?? "")")
             }
             Spacer()
         }.sheet(isPresented: $presented){ Action(bluetooth: bluetooth, presented: $presented, list: $list, isConnected: $isConnected) }
             .onAppear{ bluetooth.delegate = self }
     }
     
+    func sendState() { if state == 0 { state = 1 } else { state = 0} }
+    
     func sendValue(_ value: Float) {
         if Int(value) != Int(self.value) {
             guard let sendValue = map(Int(value), of: 0...100, to: 0...255) else { return }
-            bluetooth.send([ toBytes(sendValue)])
+            bluetooth.send([toBytes(state), toBytes(sendValue)])
         }
         self.value = value
     }
@@ -69,9 +75,7 @@ extension ContentView: BluetoothProtocol {
     
     func list(list: [Bluetooth.Device]) { self.list = list }
     
-    func value(data: Data) {
-        response = data.hexDescription
-    }
+    func value(data: Data) { response = data }
 }
 
 struct Action: View {
@@ -104,22 +108,5 @@ struct Action: View {
         }.listStyle(InsetGroupedListStyle()).onAppear{
             bluetooth.startScanning()
         }.onDisappear{ bluetooth.stopScanning() }.padding(.vertical, 0)
-    }
-}
-
-struct appButton: ButtonStyle {
-    let color: Color
-    
-    public init(color: Color = .accentColor) {
-        self.color = color
-    }
-    
-    func makeBody(configuration: Self.Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .foregroundColor(.accentColor)
-            .background(Color.accentColor.opacity(0.2))
-            .cornerRadius(8)
     }
 }

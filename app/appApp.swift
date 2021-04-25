@@ -16,3 +16,19 @@ struct appApp: App {
     }
 }
 
+struct appButton: ButtonStyle {
+    let color: Color
+    
+    public init(color: Color = .accentColor) {
+        self.color = color
+    }
+    
+    func makeBody(configuration: Self.Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .foregroundColor(.accentColor)
+            .background(Color.accentColor.opacity(0.2))
+            .cornerRadius(8)
+    }
+}

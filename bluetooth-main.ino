@@ -7,7 +7,7 @@ BLEServer *pServer = NULL;
 BLECharacteristic * pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
-uint8_t value = 0;
+uint8_t value[2];
 #define pin LED_BUILTIN
 #define service_uuid "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 #define rx_uuid "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -21,23 +21,24 @@ class MyServerCallbacks: public BLEServerCallbacks{
     deviceConnected = false;
     }
 };
-void values(uint8_t value) {
+String values(uint8_t value) {
   char hex[2];
   sprintf(hex, "%02X", value);
-  Serial.print(hex);
+  return hex;
 };
 
 class MyCallbacks: public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
     if (rxValue.length() >0) {
-      for(int i=0; i<sizeof(rxValue); i++){
-        values(rxValue[i]);
-      }
-      Serial.print("\n");
-      //for (int i = 0; i < rxValue.length(); i++) Serial.print(rxValue[i]);
-      //Serial.print("\n");
-      value = rxValue[0];
+      String allValues = "";
+      String stringValues = "";
+      for(int i=0; i<rxValue.length(); i++) allValues += values(rxValue[i]);
+      for(int i=0; i<rxValue.length(); i++) stringValues += rxValue[i];
+      Serial.println(allValues);
+      Serial.println(stringValues);
+      value[0] = rxValue[0];
+      value[1] = rxValue[1];
     }
   }
 };
@@ -60,12 +61,12 @@ void setup() {
 }
 
 void loop(){
-  if(deviceConnected){
-    pTxCharacteristic->setValue(&value, 1);
+  if(deviceConnected) {
+    pTxCharacteristic->setValue((uint8_t*)&value, sizeof(value));
     pTxCharacteristic->notify();
 		delay(10);
 	}
-	if (value == 0x01){
+	if (value[0] == 0x01) {
 	  digitalWrite(pin, 1);
   }else{
 	  digitalWrite(pin, 0);
