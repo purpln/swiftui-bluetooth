@@ -33,7 +33,16 @@ struct ScanView: View {
             }
         }
         List(list){ peripheral in
-            Button(peripheral.peripheral.name ?? ""){ bluetooth.connect(peripheral.peripheral) }
+            Button(action: { bluetooth.connect(peripheral.peripheral) }){
+                HStack{
+                    Text(peripheral.peripheral.name ?? "")
+                    Spacer()
+                }
+                HStack{
+                    Text(peripheral.uuid).font(.system(size: 10)).foregroundColor(.gray)
+                    Spacer()
+                }
+            }
         }.listStyle(InsetGroupedListStyle()).onAppear{
             bluetooth.startScanning()
         }.onDisappear{ bluetooth.stopScanning() }.padding(.vertical, 0)
