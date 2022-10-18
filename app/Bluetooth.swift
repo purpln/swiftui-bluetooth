@@ -11,6 +11,7 @@ protocol BluetoothProtocol {
     func state(state: Bluetooth.State)
     func list(list: [Bluetooth.Device])
     func value(data: Data)
+    func rssi(value: Int)
 }
 
 final class Bluetooth: NSObject {
@@ -25,6 +26,7 @@ final class Bluetooth: NSObject {
     private var readCharacteristic: CBCharacteristic?
     private var writeCharacteristic: CBCharacteristic?
     private var notifyCharacteristic: CBCharacteristic?
+    private var timer: Timer?
     
     private override init() {
         super.init()
@@ -97,12 +99,16 @@ extension Bluetooth: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         current = nil
         state = .disconnected
+        timer?.invalidate()
     }
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         current = peripheral
         state = .connected
         peripheral.delegate = self
         peripheral.discoverServices(nil)
+        timer = .scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            peripheral.readRSSI()
+        }
     }
 }
 
@@ -135,5 +141,8 @@ extension Bluetooth: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard let value = characteristic.value else { return }
         delegate?.value(data: value)
+    }
+    func peripheral(_ peripheral: CBPeripheral, didReadRSSI RSSI: NSNumber, error: Error?) {
+        delegate?.rssi(value: Int(truncating: RSSI))
     }
 }

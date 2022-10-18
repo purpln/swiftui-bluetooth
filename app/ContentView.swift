@@ -14,6 +14,7 @@ struct ContentView: View {
     @State var isConnected: Bool = Bluetooth.shared.current != nil { didSet { if isConnected { presented.toggle() } } }
     
     @State var response = Data()
+    @State var rssi: Int = 0
     @State var string: String = ""
     @State var value: Float = 0
     @State var state: Bool = false { didSet { bluetooth.send([UInt8(state.int)]) } }
@@ -37,6 +38,7 @@ struct ContentView: View {
                     .textFieldStyle(appTextField(focused: $editing))
                 Text("returned byte value from \(bluetooth.current?.name ?? ""): \(response.hex)")
                 Text("returned string: \(String(data: response, encoding: .utf8) ?? "")")
+                Text("rssi: \(rssi)")
             }
             Spacer()
         }.sheet(isPresented: $presented){ ScanView(bluetooth: bluetooth, presented: $presented, list: $list, isConnected: $isConnected) }
@@ -79,4 +81,6 @@ extension ContentView: BluetoothProtocol {
     func list(list: [Bluetooth.Device]) { self.list = list }
     
     func value(data: Data) { response = data }
+    
+    func rssi(value: Int) { rssi = value; print(value) }
 }
